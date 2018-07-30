@@ -124,6 +124,7 @@ import aQute.lib.getopt.CommandLine;
 import aQute.lib.getopt.Description;
 import aQute.lib.getopt.Options;
 import aQute.lib.hex.Hex;
+import aQute.lib.io.FileTree;
 import aQute.lib.io.IO;
 import aQute.lib.justif.Justif;
 import aQute.lib.settings.Settings;
@@ -173,6 +174,47 @@ public class bnd extends Processor {
 	static Pattern								EMAIL_P					= Pattern.compile(
 		"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?",
 		Pattern.CASE_INSENSITIVE);
+	static final String							BND_BND_P			= ".*/bnd.bnd";
+	static final String							BNDRUN_ALL_P		= ".*.bndrun";
+
+	interface verboseOptions extends Options {
+		@Description("prints more processing information")
+		boolean verbose();
+
+	}
+
+	/**
+	 * Project command, executes actions.
+	 */
+
+	@Description("Execute a Project action, or if no parms given, show information about the project")
+	@Arguments(arg = {})
+	interface projectOptions extends Options {
+		@Description("Identify another project")
+		String project();
+	}
+
+	interface workspaceOptions extends Options {
+
+		@Description("Use the following workspace")
+		String workspace();
+	}
+
+	interface excludeOptions extends Options {
+		@Description("Exclude files by pattern")
+		String[] exclude();
+	}
+
+	interface ProjectWorkspaceOptions extends workspaceOptions, projectOptions, verboseOptions, excludeOptions {
+
+	}
+
+	interface HandledProjectWorkspaceOptions {
+
+		List<File> files();
+
+		Workspace workspace();
+	}
 
 	@Description("OSGi Bundle Tool")
 	interface bndOptions extends Options {
@@ -397,8 +439,8 @@ public class bnd extends Processor {
 			getInfo(ws);
 
 		if (!check(options.ignore())) {
-			System.err.flush();
-			System.err.flush();
+			err.flush();
+			err.flush();
 			Thread.sleep(1000);
 			exitWithCode(getErrors().size());
 		}
@@ -504,7 +546,7 @@ public class bnd extends Processor {
 		if (isOk()) {
 			String jarFile = options.file();
 			if (jarFile == null)
-				jar.write(System.out);
+				jar.write(out);
 			else
 				jar.write(jarFile);
 		}
@@ -591,7 +633,7 @@ public class bnd extends Processor {
 			Jar.Compression compression = jar.hasCompression();
 			for (String path : selected) {
 				if (opts.verbose())
-					System.err.printf("%8s: %s\n", compression.toString()
+					err.printf("%8s: %s\n", compression.toString()
 						.toLowerCase(), path);
 
 				File f = getFile(store, path);
@@ -712,16 +754,7 @@ public class bnd extends Processor {
 		}
 	}
 
-	/**
-	 * Project command, executes actions.
-	 */
 
-	@Description("Execute a Project action, or if no parms given, show information about the project")
-	@Arguments(arg = {})
-	interface projectOptions extends Options {
-		@Description("Identify another project")
-		String project();
-	}
 
 	@Description("Execute a Project action, or if no parms given, show information about the project")
 	public void _project(projectOptions options) throws Exception {
@@ -823,22 +856,18 @@ public class bnd extends Processor {
 		void doit(Project p) throws Exception;
 	}
 
-	public void perProject(projectOptions opts, PerProject run) throws Exception {
-		Collection<Project> list;
+	public void perProject(ProjectWorkspaceOptions opts, PerProject run) throws Exception {
+		Collection<Project> list = new ArrayList<>();
 
-		Project project = getProject(opts.project());
-		if (project == null) {
-			Workspace ws = Workspace.findWorkspace(getBase());
-			if (!ws.isValid()) {
-				messages.NoValidWorkspace(getBase());
-			}
-			list = ws.getAllProjects();
-			if (list.isEmpty()) {
-				out.println("No projects");
-			}
+		HandledProjectWorkspaceOptions hpw = handleOptions(opts, Arrays.asList(BND_BND_P));
 
-		} else {
-			list = Arrays.asList(project);
+		Workspace ws = hpw.workspace();
+
+		for (File bndFile : hpw.files()) {
+			Project p = ws.getProjectFromFile(bndFile.getParentFile());
+			if (p != null) {
+				list.add(p);
+			}
 		}
 
 		for (Project p : list) {
@@ -849,7 +878,7 @@ public class bnd extends Processor {
 
 	@Description("Build a project. This will create the jars defined in the bnd.bnd and sub-builders.")
 	@Arguments(arg = {})
-	interface buildoptions extends projectOptions {
+	interface buildoptions extends ProjectWorkspaceOptions {
 
 		@Description("Build for test")
 		boolean test();
@@ -870,7 +899,7 @@ public class bnd extends Processor {
 	}
 
 	@Arguments(arg = {})
-	interface CompileOptions extends projectOptions {
+	interface CompileOptions extends ProjectWorkspaceOptions {
 
 		@Description("Compile for test")
 		boolean test();
@@ -891,7 +920,7 @@ public class bnd extends Processor {
 	@Arguments(arg = {
 		"testclass[:method]..."
 	})
-	interface testOptions extends projectOptions {
+	interface testOptions extends ProjectWorkspaceOptions {
 		@Description("Verify all the dependencies before launching (runpath, runbundles, testpath)")
 		boolean verify();
 
@@ -1017,7 +1046,7 @@ public class bnd extends Processor {
 	}
 
 	@Description("Clean a project")
-	interface cleanOptions extends projectOptions {
+	interface cleanOptions extends ProjectWorkspaceOptions {
 
 	}
 
@@ -2308,7 +2337,7 @@ public class bnd extends Processor {
 	}
 
 	@Description("Run OSGi tests and create report")
-	interface runtestsOptions extends Options {
+	interface runtestsOptions extends ProjectWorkspaceOptions {
 		@Description("Report directory")
 		String reportdir();
 
@@ -2318,8 +2347,6 @@ public class bnd extends Processor {
 		@Description("Path to work directory")
 		String dir();
 
-		@Description("Path to workspace")
-		String workspace();
 	}
 
 	/**
@@ -2329,18 +2356,23 @@ public class bnd extends Processor {
 	 */
 	@Description("Run OSGi tests and create report")
 	public void _runtests(runtestsOptions opts) throws Exception {
+
+		boolean verbose = opts.verbose();
 		int errors = 0;
 		File cwd = new File("").getAbsoluteFile();
 
-		Workspace ws = new Workspace(cwd);
 		try {
+			HandledProjectWorkspaceOptions hpwOptions = handleOptions(opts,
+				Arrays.asList(BNDRUN_ALL_P, BND_BND_P));
+
 			File reportDir = getFile("reports");
 
 			IO.delete(reportDir);
 
 			Tag summary = new Tag("summary");
 			summary.addAttribute("date", new Date());
-			summary.addAttribute("ws", ws.getBase());
+			summary.addAttribute("ws", hpwOptions.workspace()
+				.getBase());
 
 			if (opts.reportdir() != null) {
 				reportDir = getFile(opts.reportdir());
@@ -2356,33 +2388,28 @@ public class bnd extends Processor {
 			if (opts.dir() != null)
 				cwd = getFile(opts.dir());
 
-			if (opts.workspace() != null) {
-				ws.close();
-				ws = Workspace.getWorkspace(getFile(opts.workspace()));
-			}
 
 			// TODO check all the arguments
 
 			boolean hadOne = false;
 			try {
-				for (String arg : opts._arguments()) {
-					logger.debug("will run test {}", arg);
-					File f = getFile(arg);
-					errors += runtTest(f, ws, reportDir, summary);
-					hadOne = true;
+
+				int error;
+				for (File f : hpwOptions.files()) {
+					if (verbose) {
+						out.println();
+						out.println("try to run file: " + f);
+						out.println("results:");
+					}
+					error = runtTest(f, hpwOptions.workspace(), reportDir, summary);
+
+					if (verbose) {
+						out.println("Error: " + error);
+					}
+			
+					errors+=error;
 				}
 
-				if (!hadOne) {
-					// See if we had any, if so, just use all files in
-					// the current directory
-					File[] files = cwd.listFiles();
-					for (File f : files) {
-						if (f.getName()
-							.endsWith(".bnd")) {
-							errors += runtTest(f, ws, reportDir, summary);
-						}
-					}
-				}
 			} catch (Throwable e) {
 				if (isExceptions()) {
 					printExceptionSummary(e, out);
@@ -3733,7 +3760,7 @@ public class bnd extends Processor {
 					}
 				});
 			}
-			System.err.flush();
+			err.flush();
 
 			forker.start(20000);
 
@@ -4203,49 +4230,57 @@ public class bnd extends Processor {
 	/**
 	 * Export a bndrun file
 	 */
+	interface ExportOptions extends ProjectWorkspaceOptions {
 
-	interface ExportOptions extends projectOptions {
+		@Description("Use the following workspace")
+		String workspace();
+
 		List<String> exporter();
 
 		String output();
 	}
 
-	public void _export(ExportOptions opts) throws Exception {
 
-		Project project = getProject(opts.project());
-		if (project == null) {
-			error("No project");
-			return;
-		}
 
-		// temporary
-		project.getWorkspace()
-			.addBasicPlugin(new SubsystemExporter());
+	public void _export(ExportOptions options) throws Exception {
 
-		for (String bndrun : opts._arguments()) {
-			File f = getFile(bndrun);
-			if (!f.isFile()) {
-				error("No such file: %s", f);
-				continue;
+		HandledProjectWorkspaceOptions ho = handleOptions(options, Arrays.asList(BNDRUN_ALL_P));
+
+		for (File f : ho.files()) {
+			if (options.verbose()) {
+				out.println("Exporter: " + f);
 			}
+			// // temporary
+		// project.getWorkspace()
 
-			Run run = new Run(project.getWorkspace(), getBase(), f);
+			Run run = new Run(ho.workspace(), f);
 			run.getSettings(this);
+			run.addBasicPlugin(new SubsystemExporter());
 
 			Parameters exports = new Parameters();
 
-			List<String> types = opts.exporter();
+			List<String> types = options.exporter();
 			if (types != null) {
+			
 				for (String type : types) {
+					out.println("Types: " + type);
 					exports.putAll(new Parameters(type, this));
 				}
 			} else {
 				String exportTypes = run.getProperty(Constants.EXPORTTYPE);
+				out.println("Exporttype: " + exportTypes);
 				exports.putAll(new Parameters(exportTypes, this));
 			}
 
+			if (exports.entrySet()
+				.isEmpty()) {
+				err.println("no Exporters set");
+			}
 			for (Entry<String, Attrs> e : exports.entrySet()) {
 
+				if (options.verbose()) {
+					out.println("exporting " + run + " to " + e.getKey() + " with " + e.getValue());
+				}
 				logger.debug("exporting {} to {} with {}", run, e.getKey(), e.getValue());
 
 				Map.Entry<String, Resource> result = run.export(e.getKey(), e.getValue());
@@ -4255,7 +4290,7 @@ public class bnd extends Processor {
 
 					String name = result.getKey();
 
-					File output = new File(project.getTarget(), opts.output() == null ? name : opts.output());
+					File output = new File(run.getTarget(), options.output() == null ? name : options.output());
 					if (output.isDirectory())
 						output = new File(output, name);
 					IO.mkdirs(output.getParentFile());
@@ -4265,6 +4300,90 @@ public class bnd extends Processor {
 				}
 			}
 		}
+	}
+
+	protected HandledProjectWorkspaceOptions handleOptions(ProjectWorkspaceOptions options,
+		List<String> defaultIncludes)
+		throws Exception {
+		
+		boolean verbose = options.verbose();
+		Project project = getProject(options.project());
+		final Workspace cws = calcWorkspace(options);
+
+		File searchBaseDir = project != null ? project.getBase() : cws.getBase();
+
+		List<String> includePatterns = options._arguments();
+
+		final List<String> excludePatterns = options.exclude() == null ? new ArrayList<>()
+			: Arrays.asList(options.exclude());
+
+		if (verbose) {
+			out.println("workspace: " + cws);
+			out.println("search in dir: " + searchBaseDir);
+
+			out.println("defaultIncludesPatterns: ");
+			for (String string : defaultIncludes) {
+
+				out.println("- " + string);
+			}
+
+			out.println("includePatterns: ");
+			for (String string : includePatterns) {
+
+				out.println("- " + string);
+			}
+			out.println("excludePatterns: ");
+			for (String string : excludePatterns) {
+
+				out.println("- " + string);
+			}
+
+		}
+
+		FileTree tree = new FileTree();
+		tree.addExcludes(excludePatterns);
+		tree.addIncludes(includePatterns);
+		List<File> matchedFiles = tree.getFiles(searchBaseDir, defaultIncludes);
+
+		if (verbose) {
+			out.println("matchedFiles: ");
+			for (File string : matchedFiles) {
+
+				out.println("- " + string);
+			}
+		}
+		return new HandledProjectWorkspaceOptions() {
+
+			@Override
+			public Workspace workspace() {
+
+				return cws;
+			}
+
+			@Override
+			public List<File> files() {
+
+				return matchedFiles;
+			}
+
+		};
+
+	}
+
+	private Workspace calcWorkspace(ProjectWorkspaceOptions options) throws Exception {
+		Project project = getProject(options.project());
+		Workspace ws = null;
+
+		// Set ws if defined as param
+		if (options.workspace() != null) {
+			ws = getWorkspace(options.workspace());
+		} // Use ws of project
+		else if (project != null) {
+			ws = project.getWorkspace();
+		} else {
+			ws = getWorkspace(getBase());
+		}
+		return ws;
 	}
 
 	/**
