@@ -1,14 +1,23 @@
 package aQute.bnd.main;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+
 import aQute.bnd.osgi.About;
 import aQute.bnd.osgi.Jar;
-import junit.framework.TestCase;
+import aQute.lib.io.IO;
 
-public class TestBndMain extends TestCase {
+public class TestBndMain {
 
 	private final ByteArrayOutputStream	capturedStdOut	= new ByteArrayOutputStream();
 	private PrintStream					originalStdOut;
@@ -17,9 +26,21 @@ public class TestBndMain extends TestCase {
 	private PrintStream					originalStdErr;
 	private String						version;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Rule
+	public final TestName				testName		= new TestName();
+	private String						genTestPath;
+	private String						genTestDataPath;
+	private String						testdataDir		= "testdata/";
+
+	@Before
+	public void setUp() throws Exception {
+
+		genTestPath = "generated/tmp/test/" + testName.getMethodName() + "/";
+		genTestDataPath = genTestPath + testdataDir;
+		File wsRoot = IO.getFile(genTestDataPath);
+		IO.delete(wsRoot);
+		IO.copy(IO.getFile(testdataDir), wsRoot);
+
 		version = About.CURRENT.getWithoutQualifier()
 			.toString();
 
@@ -32,33 +53,35 @@ public class TestBndMain extends TestCase {
 		System.setErr(new PrintStream(capturedStdErr));
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		System.setErr(originalStdErr);
 		System.setOut(originalStdOut);
-		super.tearDown();
 	}
 
+	@Test
 	public void testRunStandalone() throws Exception {
 		bnd.mainNoExit(new String[] {
-			"run", "testdata/standalone/standalone.bndrun"
+			"run", genTestDataPath + "/standalone/standalone.bndrun"
 		});
 		expectNoError();
 		expectOutput("Gesundheit!");
 	}
 
+	@Test
 	public void testRunWorkspace() throws Exception {
 		bnd.mainNoExit(new String[] {
-			"run", "testdata/workspace/p/workspace.bndrun"
+			"run", genTestDataPath + "/workspace/p/workspace.bndrun"
 		});
 		expectNoError();
 		expectOutput("Gesundheit!");
 	}
 
+	@Test
 	public void testPackageBndrunStandalone() throws Exception {
-		String output = "generated/tmp/export-standalone.jar";
+		String output = genTestPath + "/export-standalone.jar";
 		bnd.mainNoExit(new String[] {
-			"package", "-o", output, "testdata/standalone/standalone.bndrun"
+			"package", "-o", output, genTestDataPath + "/standalone/standalone.bndrun"
 		});
 		expectNoError();
 
@@ -70,10 +93,11 @@ public class TestBndMain extends TestCase {
 		}
 	}
 
+	@Test
 	public void testPackageBndrunWorkspace() throws Exception {
-		String output = "generated/tmp/export-workspace.jar";
+		String output = genTestPath + "export-workspace.jar";
 		bnd.mainNoExit(new String[] {
-			"package", "-o", output, "testdata/workspace/p/workspace.bndrun"
+			"package", "-o", output, genTestDataPath + "/workspace/p/workspace.bndrun"
 		});
 		expectNoError();
 
@@ -85,10 +109,11 @@ public class TestBndMain extends TestCase {
 		}
 	}
 
+	@Test
 	public void testPackageProject() throws Exception {
-		String output = "generated/tmp/export-workspace-project.jar";
+		String output = genTestPath + "export-workspace-project.jar";
 		bnd.mainNoExit(new String[] {
-			"package", "-o", output, "testdata/workspace/p2"
+			"package", "-o", output, genTestDataPath + "/workspace/p2"
 		});
 		expectNoError();
 
