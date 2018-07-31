@@ -263,7 +263,7 @@ public class ResolveCommand extends Processor {
 	public void _resolve(ResolveOptions options) throws Exception {
 
 		HandledProjectWorkspaceOptions hwpo = bnd.handleOptions(options,
-			Arrays.asList(aQute.bnd.main.bnd.BNDRUN_ALL_P, aQute.bnd.main.bnd.BND_BND_P));
+			Arrays.asList(aQute.bnd.main.bnd.BNDRUN_ALL, aQute.bnd.main.bnd.BND_BND));
 
 		for (File f : hwpo.files()) {
 			if (options.verbose()) {

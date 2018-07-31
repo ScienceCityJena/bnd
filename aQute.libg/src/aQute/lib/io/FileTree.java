@@ -81,21 +81,21 @@ public class FileTree {
 	 * include and exclude Ant-style glob expressions.
 	 * 
 	 * @param baseDir The base directory for locating files.
-	 * @param defaultIncludes The default include patterns to use of no include
+	 * @param defaultIncludes The default include patterns to use if no include
 	 *            patterns were configured.
 	 * @return A list of files.
 	 * @throws IOException If an exception occurs.
 	 */
 	public List<File> getFiles(File baseDir, List<String> defaultIncludes) throws IOException {
 
-		List<Pattern> agList = new ArrayList<>();
+		List<Pattern> defaultPatternList = new ArrayList<>();
 		if (defaultIncludes != null) {
 			for (String defaultInclude : defaultIncludes) {
-				agList.add(AntGlob.toPattern(defaultInclude));
+				defaultPatternList.add(AntGlob.toPattern(defaultInclude));
 			}
 		}
 
-		List<Pattern> includePatterns = includes.isEmpty() && files.isEmpty() && (!agList.isEmpty()) ? agList
+		List<Pattern> includePatterns = includes.isEmpty() && files.isEmpty() && (!defaultPatternList.isEmpty()) ? defaultPatternList
 			: includes;
 		if (includePatterns.isEmpty()) {
 			return files;

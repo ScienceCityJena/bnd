@@ -18,6 +18,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -174,8 +175,8 @@ public class bnd extends Processor {
 	static Pattern								EMAIL_P					= Pattern.compile(
 		"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?",
 		Pattern.CASE_INSENSITIVE);
-	static final String							BND_BND_P			= ".*/bnd.bnd";
-	static final String							BNDRUN_ALL_P		= ".*.bndrun";
+	static final String							BND_BND					= "*/bnd.bnd";
+	static final String							BNDRUN_ALL				= "*/*.bndrun";
 
 	interface verboseOptions extends Options {
 		@Description("prints more processing information")
@@ -265,9 +266,19 @@ public class bnd extends Processor {
 	/**
 	 * For testing
 	 */
-	static void mainNoExit(String args[]) throws Exception {
-		noExit.set(true);
-		main(args);
+	static void mainNoExit(String args[], Path baseExecDir) throws Exception {
+		noExit.set(true);// extra in test
+
+		Workspace.setDriver(Constants.BNDDRIVER_BND);
+		Workspace.addGestalt(Constants.GESTALT_SHELL, null);
+		Workspace.addGestalt(Constants.GESTALT_INTERACTIVE, null);
+
+		Workspace ws = Workspace.findWorkspace(IO.work);
+		try (bnd main = new bnd()) {
+			main.setBase(baseExecDir.toFile());
+			main.start(args); // extra in test
+		}
+		exitWithCode(0);
 	}
 
 	public void start(String args[]) throws Exception {
@@ -859,7 +870,7 @@ public class bnd extends Processor {
 	public void perProject(ProjectWorkspaceOptions opts, PerProject run) throws Exception {
 		Collection<Project> list = new ArrayList<>();
 
-		HandledProjectWorkspaceOptions hpw = handleOptions(opts, Arrays.asList(BND_BND_P));
+		HandledProjectWorkspaceOptions hpw = handleOptions(opts, Arrays.asList(BND_BND));
 
 		Workspace ws = hpw.workspace();
 
@@ -2363,7 +2374,7 @@ public class bnd extends Processor {
 
 		try {
 			HandledProjectWorkspaceOptions hpwOptions = handleOptions(opts,
-				Arrays.asList(BNDRUN_ALL_P, BND_BND_P));
+				Arrays.asList(BNDRUN_ALL, BND_BND));
 
 			File reportDir = getFile("reports");
 
@@ -4244,7 +4255,7 @@ public class bnd extends Processor {
 
 	public void _export(ExportOptions options) throws Exception {
 
-		HandledProjectWorkspaceOptions ho = handleOptions(options, Arrays.asList(BNDRUN_ALL_P));
+		HandledProjectWorkspaceOptions ho = handleOptions(options, Arrays.asList(BNDRUN_ALL));
 
 		for (File f : ho.files()) {
 			if (options.verbose()) {
