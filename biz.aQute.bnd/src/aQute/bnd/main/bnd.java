@@ -175,8 +175,8 @@ public class bnd extends Processor {
 	static Pattern								EMAIL_P					= Pattern.compile(
 		"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?",
 		Pattern.CASE_INSENSITIVE);
-	static final String							BND_BND					= "*/bnd.bnd";
-	static final String							BNDRUN_ALL				= "*/*.bndrun";
+	static final String							BND_BND					= "**/bnd.bnd";
+	static final String							BNDRUN_ALL				= "**/*.bndrun";
 
 	interface verboseOptions extends Options {
 		@Description("prints more processing information")

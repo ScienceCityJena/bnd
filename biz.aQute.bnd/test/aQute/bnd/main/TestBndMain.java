@@ -148,18 +148,6 @@ public class TestBndMain {
 		}
 	}
 
-	@Test
-	public void testCompile() throws Exception {
-		String input = "compile";
-
-		test(input, gTD_WS);
-		expectNoError();
-
-		expectAddedFiles(gTD_WS, "p3/bin/somepackage/SomeClass.class");
-
-		expectFilesCount(1, 0, 0);
-
-	}
 
 	@Test
 	public void testClean() throws Exception {
@@ -175,6 +163,46 @@ public class TestBndMain {
 		expectFilesCount(0, 3, 0);
 	}
 
+	@Test
+	public void testCleanP() throws Exception {
+		String input = "clean -p p2";
+
+		test(input, gTD_WS);
+		expectNoError();
+
+		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
+		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
+		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+
+		expectFilesCount(0, 2, 0);
+	}
+
+	@Test
+	public void testCleanWS() throws Exception {
+		String input = "clean";
+
+		test(input, gTData);
+		expectNoError();
+
+		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
+		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
+		expectRemovedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+
+		expectFilesCount(0, 3, 0);
+	}
+
+	@Test
+	public void testCompile() throws Exception {
+		String input = "compile";
+
+		test(input, gTD_WS);
+		expectNoError();
+
+		expectAddedFiles(gTD_WS, "p3/bin/somepackage/SomeClass.class");
+
+		expectFilesCount(1, 0, 0);
+
+	}
 	public void test(String input, Path baseExecDir) throws Exception {
 
 		List<Path> filesBefore = Files.walk(gTData)
@@ -186,8 +214,10 @@ public class TestBndMain {
 		bnd.mainNoExit(input.split(" "), baseExecDir.toAbsolutePath());
 
 		List<Path> modyfiedFiels = Files.walk(gTData)
+			.filter(Files::isRegularFile)
 			.filter(p -> {
 				try {
+
 					return Files.getLastModifiedTime(p)
 						.toMillis() > time;
 				} catch (IOException e) {
@@ -204,10 +234,10 @@ public class TestBndMain {
 
 		addedPaths.addAll(filesAfter);
 		filesBefore.forEach(e -> {
-			boolean b = addedPaths.remove(e) ? unremovedPaths.add(e) : removedPaths.add(e);
+			boolean b = addedPaths.remove(e) ? untouchedPaths.add(e) : removedPaths.add(e);
 		});
 
-		modifiedPaths = unremovedPaths.stream()
+		modifiedPaths = untouchedPaths.stream()
 			.filter(p -> {
 				try {
 					return Files.getLastModifiedTime(p)
@@ -237,7 +267,7 @@ public class TestBndMain {
 	}
 
 	List<Path>	addedPaths		= new ArrayList<>();
-	List<Path>	unremovedPaths	= new ArrayList<>();
+	List<Path>	untouchedPaths	= new ArrayList<>();
 	List<Path>	removedPaths	= new ArrayList<>();
 	List<Path>	modifiedPaths	= new ArrayList<>();
 
@@ -252,8 +282,8 @@ public class TestBndMain {
 			pw.println("-" + path);
 		}
 		pw.println();
-		pw.println("unremoved: " + unremovedPaths.size());
-		for (Path path : unremovedPaths) {
+		pw.println("unremoved: " + untouchedPaths.size());
+		for (Path path : untouchedPaths) {
 			pw.println("-" + path);
 		}
 		pw.println();
@@ -283,18 +313,22 @@ public class TestBndMain {
 		assertTrue(modifiedPaths.contains(base.resolve(file)));
 	}
 
+	private void expectUntouchedFiles(Path base, String file) {
+		assertTrue(untouchedPaths.contains(base.resolve(file)));
+	}
+
 	private void expectFilesCount(Integer added, Integer removed, Integer modified) {
 		expectFilesCount(added, removed, modified, null);
 	}
 
-	private void expectFilesCount(Integer added, Integer removed, Integer modified, Integer unremoved) {
+	private void expectFilesCount(Integer added, Integer removed, Integer modified, Integer untouched) {
 
 		if (added != null) {
 			assertEquals(added, Integer.valueOf(addedPaths.size()));
 		}
 
-		if (unremoved != null) {
-			assertEquals(unremoved, Integer.valueOf(unremovedPaths.size()));
+		if (untouched != null) {
+			assertEquals(untouched, Integer.valueOf(untouchedPaths.size()));
 		}
 
 		if (removed != null) {
