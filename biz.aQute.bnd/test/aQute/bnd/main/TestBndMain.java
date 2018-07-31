@@ -39,29 +39,29 @@ public class TestBndMain {
 
 	@Rule
 	public final TestName				testName		= new TestName();
-	private String						testdataDir		= "testdata/";
-	private Path						gTestPath;
-	private Path						gTData;
-	private Path						gTD_Bu;
-	private Path						gTD_SA;
-	private Path						gTD_WS;
+	private String						testDataDir		= "testdata/";
+	private Path						testsPath;
+	private Path						testNamePath;
+	private Path						testNamePathBundles;
+	private Path						testNamePathStandalone;
+	private Path						testNamePathWorkspace;
 
 	@Before
 	public void setUp() throws Exception {
 
-		gTestPath = Paths.get("generated/tmp/test/" + testName.getMethodName())
+		testsPath = Paths.get("generated/tmp/test/" + testName.getMethodName())
 			.toAbsolutePath();
-		gTData = gTestPath.resolve(testdataDir)
+		testNamePath = testsPath.resolve(testDataDir)
 			.toAbsolutePath();
-		gTD_Bu = gTData.resolve("bundles")
+		testNamePathBundles = testNamePath.resolve("bundles")
 			.toAbsolutePath();
-		gTD_SA = gTData.resolve("standalone")
+		testNamePathStandalone = testNamePath.resolve("standalone")
 			.toAbsolutePath();
-		gTD_WS = gTData.resolve("workspace")
+		testNamePathWorkspace = testNamePath.resolve("workspace")
 			.toAbsolutePath();
 
-		IO.delete(gTData);
-		IO.copy(IO.getFile(testdataDir), gTData.toFile());
+		IO.delete(testNamePath);
+		IO.copy(IO.getFile(testDataDir), testNamePath.toFile());
 
 		version = About.CURRENT.getWithoutQualifier()
 			.toString();
@@ -85,7 +85,7 @@ public class TestBndMain {
 	public void testRunStandalone() throws Exception {
 		bnd.mainNoExit(new String[] {
 			"run", "standalone/standalone.bndrun"
-		}, gTData);
+		}, testNamePath);
 		expectNoError();
 		expectOutput("Gesundheit!");
 	}
@@ -94,17 +94,17 @@ public class TestBndMain {
 	public void testRunWorkspace() throws Exception {
 		bnd.mainNoExit(new String[] {
 			"run", "workspace/p/workspace.bndrun"
-		}, gTData);
+		}, testNamePath);
 		expectNoError();
 		expectOutput("Gesundheit!");
 	}
 
 	@Test
 	public void testPackageBndrunStandalone() throws Exception {
-		String output = gTestPath + "/export-standalone.jar";
+		String output = testsPath + "/export-standalone.jar";
 		bnd.mainNoExit(new String[] {
 			"package", "-o", output, "standalone/standalone.bndrun"
-		}, gTData);
+		}, testNamePath);
 		expectNoError();
 
 		// validate exported jar content
@@ -117,10 +117,10 @@ public class TestBndMain {
 
 	@Test
 	public void testPackageBndrunWorkspace() throws Exception {
-		String output = gTestPath + "export-workspace.jar";
+		String output = testsPath + "export-workspace.jar";
 		bnd.mainNoExit(new String[] {
 			"package", "-o", output, "workspace/p/workspace.bndrun"
-		}, gTData);
+		}, testNamePath);
 		expectNoError();
 
 		// validate exported jar content
@@ -133,11 +133,11 @@ public class TestBndMain {
 
 	@Test
 	public void testPackageProject() throws Exception {
-		String output = gTData.resolve("export-workspace-project.jar")
+		String output = testNamePath.resolve("export-workspace-project.jar")
 			.toString();
 		bnd.mainNoExit(new String[] {
 			"package", "-o", output, "workspace/p2"
-		}, gTData);
+		}, testNamePath);
 		expectNoError();
 
 		// validate exported jar content
@@ -148,89 +148,83 @@ public class TestBndMain {
 		}
 	}
 
-
 	@Test
 	public void testClean() throws Exception {
 		String input = "clean";
 
-		test(input, gTD_WS);
+		test(input, testNamePathWorkspace);
 		expectNoError();
 
-		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectRemovedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+		expectRemovedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+		expectRemovedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
-		expectFilesCount(0, 3, 0);
+		expectFilesCount(0, 2, 0);
 	}
 
 	@Test
 	public void testCleanP() throws Exception {
 		String input = "clean -p p2";
 
-		test(input, gTD_WS);
+		test(input, testNamePathWorkspace);
 		expectNoError();
 
-		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+		expectRemovedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
-		expectFilesCount(0, 2, 0);
+		expectFilesCount(0, 1, 0);
 	}
 
 	@Test
 	public void testCleanWS() throws Exception {
-		String input = "clean --workspace " + gTD_WS;
+		String input = "clean --workspace " + testNamePathWorkspace;
 
-		test(input, gTData);
+		test(input, testNamePath);
 		expectNoError();
 
-		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectRemovedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+		expectRemovedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+		expectRemovedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
-		expectFilesCount(0, 3, 0);
+		expectFilesCount(0, 2, 0);
 	}
 
 	@Test
 	public void testCleanWSp() throws Exception {
-		String input = "clean --workspace " + gTD_WS + " --project " + gTD_WS.resolve("p2");
+		String input = "clean --workspace " + testNamePathWorkspace + " --project "
+			+ testNamePathWorkspace.resolve("p2");
 
-		test(input, gTData);
+		test(input, testNamePath);
 		expectNoError();
 
-		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+		expectRemovedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
-		expectFilesCount(0, 2, 0);
+		expectFilesCount(0, 1, 0);
 	}
 
 	@Test
 	public void testCleanIncl() throws Exception {
 		String input = "clean --exclude p3  p*";
 
-		test(input, gTD_WS);
+		test(input, testNamePathWorkspace);
 		expectNoError();
 
-		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+		expectRemovedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
-		expectFilesCount(0, 2, 0);
+		expectFilesCount(0, 1, 0);
 	}
-
 
 	@Test
 	public void testCompile() throws Exception {
 		String input = "compile";
 
-		test(input, gTD_WS);
+		test(input, testNamePathWorkspace);
 		expectNoError();
-		expectAddedFiles(gTD_WS, "p2/bin/somepackage/SomeClass.class");
-		expectAddedFiles(gTD_WS, "p3/bin/somepackage/SomeClass.class");
-		expectUntouchedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectUntouchedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+		expectAddedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeClass.class");
+		expectAddedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeClass.class");
+
+		expectUntouchedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(2, 0, 0);
 	}
@@ -239,44 +233,45 @@ public class TestBndMain {
 	public void testCompileP() throws Exception {
 		String input = "compile -p p2";
 
-		test(input, gTD_WS);
+		test(input, testNamePathWorkspace);
 		expectNoError();
 
-		expectAddedFiles(gTD_WS, "p2/bin/somepackage/SomeClass.class");
-		expectUntouchedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectUntouchedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+		expectAddedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeClass.class");
+
+		expectUntouchedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(1, 0, 0);
 	}
 
 	@Test
 	public void testCompileWS() throws Exception {
-		String input = "compile --workspace " + gTD_WS;
+		String input = "compile --workspace " + testNamePathWorkspace;
 
-		test(input, gTData);
+		test(input, testNamePath);
 		expectNoError();
 
-		expectAddedFiles(gTD_WS, "p2/bin/somepackage/SomeClass.class");
-		expectAddedFiles(gTD_WS, "p3/bin/somepackage/SomeClass.class");
-		expectUntouchedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectUntouchedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+		expectAddedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeClass.class");
+		expectAddedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeClass.class");
+
+		expectUntouchedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(2, 0, 0);
 	}
 
 	@Test
 	public void testCompileWSp() throws Exception {
-		String input = "compile --workspace " + gTD_WS + " --project " + gTD_WS.resolve("p2");
+		String input = "compile --workspace " + testNamePathWorkspace + " --project "
+			+ testNamePathWorkspace.resolve("p2");
 
-		test(input, gTData);
+		test(input, testNamePath);
 		expectNoError();
 
-		expectAddedFiles(gTD_WS, "p2/bin/somepackage/SomeClass.class");
-		expectUntouchedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectUntouchedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+		expectAddedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeClass.class");
+
+		expectUntouchedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(1, 0, 0);
 	}
@@ -285,20 +280,20 @@ public class TestBndMain {
 	public void testCompileIncl() throws Exception {
 		String input = "compile --exclude p3  p*";
 
-		test(input, gTD_WS);
+		test(input, testNamePathWorkspace);
 		expectNoError();
 
-		expectAddedFiles(gTD_WS, "p2/bin/somepackage/SomeClass.class");
-		expectUntouchedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectUntouchedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+		expectAddedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeClass.class");
+
+		expectUntouchedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(1, 0, 0);
 	}
 
 	private void test(String input, Path baseExecDir) throws Exception {
 
-		List<Path> filesBefore = Files.walk(gTData)
+		List<Path> filesBefore = Files.walk(testNamePath)
 			.filter(Files::isRegularFile)
 			.collect(Collectors.toList());
 
@@ -306,7 +301,7 @@ public class TestBndMain {
 
 		bnd.mainNoExit(input.split(" "), baseExecDir.toAbsolutePath());
 
-		List<Path> modyfiedFiels = Files.walk(gTData)
+		List<Path> modyfiedFiels = Files.walk(testNamePath)
 			.filter(Files::isRegularFile)
 			.filter(p -> {
 				try {
@@ -321,7 +316,7 @@ public class TestBndMain {
 			})
 			.collect(Collectors.toList());
 
-		List<Path> filesAfter = Files.walk(gTData)
+		List<Path> filesAfter = Files.walk(testNamePath)
 			.filter(Files::isRegularFile)
 			.collect(Collectors.toList());
 
@@ -366,7 +361,8 @@ public class TestBndMain {
 
 	private void printFileInfos() throws IOException {
 
-		BufferedWriter bw = Files.newBufferedWriter(gTData.resolve("filechanges.txt"), StandardOpenOption.CREATE_NEW);
+		BufferedWriter bw = Files.newBufferedWriter(testNamePath.resolve("filechanges.txt"),
+			StandardOpenOption.CREATE_NEW);
 
 		PrintWriter pw = new PrintWriter(bw);
 
