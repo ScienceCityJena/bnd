@@ -867,7 +867,7 @@ public class bnd extends Processor {
 	}
 
 	public void perProject(ProjectWorkspaceOptions opts, PerProject run) throws Exception {
-		Collection<Project> list = new ArrayList<>();
+		List<Project> list = new ArrayList<>();
 
 		HandledProjectWorkspaceOptions hpw = handleOptions(opts, Arrays.asList("*"));
 
@@ -884,7 +884,9 @@ public class bnd extends Processor {
 			}
 		}
 
-		for (Project p : list) {
+		Set<Project> orderedP = Workspace.getBuildOrder(list);
+
+		for (Project p : orderedP) {
 			run.doit(p);
 			getInfo(p, p + ": ");
 		}

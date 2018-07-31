@@ -572,7 +572,17 @@ public class Workspace extends Processor {
 		return result;
 	}
 
-	private void getBuildOrder(Collection<Project> dependsOn, Set<Project> result) throws Exception {
+	public static Set<Project> getBuildOrder(Collection<Project> projects) throws Exception {
+		Set<Project> result = new LinkedHashSet<>();
+		for (Project project : projects) {
+			Collection<Project> dependsOn = project.getDependson();
+			getBuildOrder(dependsOn, result);
+			result.add(project);
+		}
+		return result;
+	}
+
+	private static void getBuildOrder(Collection<Project> dependsOn, Set<Project> result) throws Exception {
 		for (Project project : dependsOn) {
 			Collection<Project> subProjects = project.getDependson();
 			for (Project subProject : subProjects) {
