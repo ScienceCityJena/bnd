@@ -179,7 +179,7 @@ public class TestBndMain {
 
 	@Test
 	public void testCleanWS() throws Exception {
-		String input = "clean";
+		String input = "clean --workspace " + gTD_WS;
 
 		test(input, gTData);
 		expectNoError();
@@ -192,18 +192,111 @@ public class TestBndMain {
 	}
 
 	@Test
+	public void testCleanWSp() throws Exception {
+		String input = "clean --workspace " + gTD_WS + " --project " + gTD_WS.resolve("p2");
+
+		test(input, gTData);
+		expectNoError();
+
+		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
+		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
+		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+
+		expectFilesCount(0, 2, 0);
+	}
+
+	@Test
+	public void testCleanIncl() throws Exception {
+		String input = "clean --exclude p3  p*";
+
+		test(input, gTD_WS);
+		expectNoError();
+
+		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
+		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
+		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+
+		expectFilesCount(0, 2, 0);
+	}
+
+
+	@Test
 	public void testCompile() throws Exception {
 		String input = "compile";
 
 		test(input, gTD_WS);
 		expectNoError();
-
+		expectAddedFiles(gTD_WS, "p2/bin/somepackage/SomeClass.class");
 		expectAddedFiles(gTD_WS, "p3/bin/somepackage/SomeClass.class");
+		expectUntouchedFiles(gTD_WS, "p2/generated/buildfiles");
+		expectUntouchedFiles(gTD_WS, "p2/generated/p2.jar");
+		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+
+		expectFilesCount(2, 0, 0);
+	}
+
+	@Test
+	public void testCompileP() throws Exception {
+		String input = "compile -p p2";
+
+		test(input, gTD_WS);
+		expectNoError();
+
+		expectAddedFiles(gTD_WS, "p2/bin/somepackage/SomeClass.class");
+		expectUntouchedFiles(gTD_WS, "p2/generated/buildfiles");
+		expectUntouchedFiles(gTD_WS, "p2/generated/p2.jar");
+		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(1, 0, 0);
-
 	}
-	public void test(String input, Path baseExecDir) throws Exception {
+
+	@Test
+	public void testCompileWS() throws Exception {
+		String input = "compile --workspace " + gTD_WS;
+
+		test(input, gTData);
+		expectNoError();
+
+		expectAddedFiles(gTD_WS, "p2/bin/somepackage/SomeClass.class");
+		expectAddedFiles(gTD_WS, "p3/bin/somepackage/SomeClass.class");
+		expectUntouchedFiles(gTD_WS, "p2/generated/buildfiles");
+		expectUntouchedFiles(gTD_WS, "p2/generated/p2.jar");
+		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+
+		expectFilesCount(2, 0, 0);
+	}
+
+	@Test
+	public void testCompileWSp() throws Exception {
+		String input = "compile --workspace " + gTD_WS + " --project " + gTD_WS.resolve("p2");
+
+		test(input, gTData);
+		expectNoError();
+
+		expectAddedFiles(gTD_WS, "p2/bin/somepackage/SomeClass.class");
+		expectUntouchedFiles(gTD_WS, "p2/generated/buildfiles");
+		expectUntouchedFiles(gTD_WS, "p2/generated/p2.jar");
+		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+
+		expectFilesCount(1, 0, 0);
+	}
+
+	@Test
+	public void testCompileIncl() throws Exception {
+		String input = "compile --exclude p3  p*";
+
+		test(input, gTD_WS);
+		expectNoError();
+
+		expectAddedFiles(gTD_WS, "p2/bin/somepackage/SomeClass.class");
+		expectUntouchedFiles(gTD_WS, "p2/generated/buildfiles");
+		expectUntouchedFiles(gTD_WS, "p2/generated/p2.jar");
+		expectUntouchedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+
+		expectFilesCount(1, 0, 0);
+	}
+
+	private void test(String input, Path baseExecDir) throws Exception {
 
 		List<Path> filesBefore = Files.walk(gTData)
 			.filter(Files::isRegularFile)

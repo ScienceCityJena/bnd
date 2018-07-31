@@ -18,6 +18,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -176,7 +177,7 @@ public class bnd extends Processor {
 		"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?",
 		Pattern.CASE_INSENSITIVE);
 	static final String							BND_BND					= "**/bnd.bnd";
-	static final String							BNDRUN_ALL				= "**/*.bndrun";
+	static final String							BNDRUN_ALL				= "*/*.bndrun";
 
 	interface verboseOptions extends Options {
 		@Description("prints more processing information")
@@ -765,8 +766,6 @@ public class bnd extends Processor {
 		}
 	}
 
-
-
 	@Description("Execute a Project action, or if no parms given, show information about the project")
 	public void _project(projectOptions options) throws Exception {
 		Project project = getProject(options.project());
@@ -870,14 +869,18 @@ public class bnd extends Processor {
 	public void perProject(ProjectWorkspaceOptions opts, PerProject run) throws Exception {
 		Collection<Project> list = new ArrayList<>();
 
-		HandledProjectWorkspaceOptions hpw = handleOptions(opts, Arrays.asList(BND_BND));
+		HandledProjectWorkspaceOptions hpw = handleOptions(opts, Arrays.asList("*"));
 
 		Workspace ws = hpw.workspace();
 
-		for (File bndFile : hpw.files()) {
-			Project p = ws.getProjectFromFile(bndFile.getParentFile());
-			if (p != null) {
-				list.add(p);
+		for (File folder : hpw.files()) {
+
+			if (Files.isDirectory(folder.toPath())) {
+
+				Project p = ws.getProjectFromFile(folder);
+				if (p != null) {
+					list.add(p);
+				}
 			}
 		}
 
@@ -909,7 +912,6 @@ public class bnd extends Processor {
 		});
 	}
 
-	@Arguments(arg = {})
 	interface CompileOptions extends ProjectWorkspaceOptions {
 
 		@Description("Compile for test")
@@ -2373,8 +2375,7 @@ public class bnd extends Processor {
 		File cwd = new File("").getAbsoluteFile();
 
 		try {
-			HandledProjectWorkspaceOptions hpwOptions = handleOptions(opts,
-				Arrays.asList(BNDRUN_ALL, BND_BND));
+			HandledProjectWorkspaceOptions hpwOptions = handleOptions(opts, Arrays.asList(BNDRUN_ALL, BND_BND));
 
 			File reportDir = getFile("reports");
 
@@ -2399,7 +2400,6 @@ public class bnd extends Processor {
 			if (opts.dir() != null)
 				cwd = getFile(opts.dir());
 
-
 			// TODO check all the arguments
 
 			boolean hadOne = false;
@@ -2417,8 +2417,8 @@ public class bnd extends Processor {
 					if (verbose) {
 						out.println("Error: " + error);
 					}
-			
-					errors+=error;
+
+					errors += error;
 				}
 
 			} catch (Throwable e) {
@@ -4251,8 +4251,6 @@ public class bnd extends Processor {
 		String output();
 	}
 
-
-
 	public void _export(ExportOptions options) throws Exception {
 
 		HandledProjectWorkspaceOptions ho = handleOptions(options, Arrays.asList(BNDRUN_ALL));
@@ -4262,7 +4260,7 @@ public class bnd extends Processor {
 				out.println("Exporter: " + f);
 			}
 			// // temporary
-		// project.getWorkspace()
+			// project.getWorkspace()
 
 			Run run = new Run(ho.workspace(), f);
 			run.getSettings(this);
@@ -4272,7 +4270,7 @@ public class bnd extends Processor {
 
 			List<String> types = options.exporter();
 			if (types != null) {
-			
+
 				for (String type : types) {
 					out.println("Types: " + type);
 					exports.putAll(new Parameters(type, this));
@@ -4314,9 +4312,8 @@ public class bnd extends Processor {
 	}
 
 	protected HandledProjectWorkspaceOptions handleOptions(ProjectWorkspaceOptions options,
-		List<String> defaultIncludes)
-		throws Exception {
-		
+		List<String> defaultIncludes) throws Exception {
+
 		boolean verbose = options.verbose();
 		Project project = getProject(options.project());
 		final Workspace cws = calcWorkspace(options);

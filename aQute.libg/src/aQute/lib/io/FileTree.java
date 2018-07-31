@@ -14,9 +14,9 @@ import java.util.stream.Stream;
 import aQute.libg.glob.AntGlob;
 
 public class FileTree {
-	private List<File>			files		= new ArrayList<>();
-	private List<Pattern>		includes	= new ArrayList<>();
-	private List<Pattern>		excludes	= new ArrayList<>();
+	private List<File>		files		= new ArrayList<>();
+	private List<Pattern>	includes	= new ArrayList<>();
+	private List<Pattern>	excludes	= new ArrayList<>();
 
 	public FileTree() {}
 
@@ -95,7 +95,8 @@ public class FileTree {
 			}
 		}
 
-		List<Pattern> includePatterns = includes.isEmpty() && files.isEmpty() && (!defaultPatternList.isEmpty()) ? defaultPatternList
+		List<Pattern> includePatterns = includes.isEmpty() && files.isEmpty() && (!defaultPatternList.isEmpty())
+			? defaultPatternList
 			: includes;
 		if (includePatterns.isEmpty()) {
 			return files;
@@ -103,25 +104,24 @@ public class FileTree {
 		List<Pattern> excludePatterns = excludes;
 
 		Path basePath = baseDir.toPath();
-		Stream<Path> walker;
-			walker = Files.walk(basePath)
-				.skip(1); // skip basePath itself
+		try (Stream<Path> walker = Files.walk(basePath)) {
 
-		List<File> result = Stream.concat(files.stream(), //
-			walker.filter(p -> {
-				String path = basePath.relativize(p)
-					.toString();
-				return includePatterns.stream()
-					.anyMatch(i -> i.matcher(path)
-						.matches())
-					&& !excludePatterns.stream()
-						.anyMatch(e -> e.matcher(path)
-							.matches());
-			})
-				.sorted()
-				.map(Path::toFile))
-			.distinct()
-			.collect(toList());
-		return result;
+			List<File> result = Stream.concat(files.stream(), //
+				walker.filter(p -> {
+					String path = basePath.relativize(p)
+						.toString();
+					return includePatterns.stream()
+						.anyMatch(i -> i.matcher(path)
+							.matches())
+						&& !excludePatterns.stream()
+							.anyMatch(e -> e.matcher(path)
+								.matches());
+				})
+					.sorted()
+					.map(Path::toFile))
+				.distinct()
+				.collect(toList());
+			return result;
+		}
 	}
 }
