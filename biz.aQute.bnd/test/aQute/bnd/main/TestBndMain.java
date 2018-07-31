@@ -148,24 +148,32 @@ public class TestBndMain {
 		}
 	}
 
-	private void expectOutput(String expected) {
-		assertEquals("wrong output", expected, capturedStdOut.toString()
-			.trim());
+	@Test
+	public void testCompile() throws Exception {
+		String input = "compile";
+
+		test(input, gTD_WS);
+		expectNoError();
+
+		expectAddedFiles(gTD_WS, "p3/bin/somepackage/SomeClass.class");
+
+		expectFilesCount(1, 0, 0);
+
 	}
 
-	private void expectNoError() {
-		assertEquals("non-empty error output", "", capturedStdErr.toString()
-			.trim());
-	}
+	@Test
+	public void testClean() throws Exception {
+		String input = "clean";
 
-	private void expectJarEntry(Jar jar, String path) {
-		assertNotNull("missing entry in jar: " + path, jar.getResource(path));
-	}
+		test(input, gTD_WS);
+		expectNoError();
 
-	List<Path>	addedPaths		= new ArrayList<>();
-	List<Path>	unremovedPaths	= new ArrayList<>();
-	List<Path>	removedPaths	= new ArrayList<>();
-	List<Path>	modifiedPaths	= new ArrayList<>();
+		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
+		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
+		expectRemovedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
+
+		expectFilesCount(0, 3, 0);
+	}
 
 	public void test(String input, Path baseExecDir) throws Exception {
 
@@ -214,6 +222,25 @@ public class TestBndMain {
 		printFileInfos();
 	}
 
+	private void expectOutput(String expected) {
+		assertEquals("wrong output", expected, capturedStdOut.toString()
+			.trim());
+	}
+
+	private void expectNoError() {
+		assertEquals("non-empty error output", "", capturedStdErr.toString()
+			.trim());
+	}
+
+	private void expectJarEntry(Jar jar, String path) {
+		assertNotNull("missing entry in jar: " + path, jar.getResource(path));
+	}
+
+	List<Path>	addedPaths		= new ArrayList<>();
+	List<Path>	unremovedPaths	= new ArrayList<>();
+	List<Path>	removedPaths	= new ArrayList<>();
+	List<Path>	modifiedPaths	= new ArrayList<>();
+
 	private void printFileInfos() throws IOException {
 
 		BufferedWriter bw = Files.newBufferedWriter(gTData.resolve("filechanges.txt"), StandardOpenOption.CREATE_NEW);
@@ -244,17 +271,16 @@ public class TestBndMain {
 
 	}
 
-	@Test
-	public void testCompile() throws Exception {
-		String input = "compile";
+	private void expectRemovedFiles(Path base, String file) {
+		assertTrue(removedPaths.contains(base.resolve(file)));
+	}
 
-		test(input, gTD_WS);
-		expectNoError();
+	private void expectAddedFiles(Path base, String file) {
+		assertTrue(addedPaths.contains(base.resolve(file)));
+	}
 
-		expectAddedFiles(gTD_WS, "p3/bin/somepackage/SomeClass.class");
-
-		expectFilesCount(1, 0, 0);
-
+	private void expectModifiedFiles(Path base, String file) {
+		assertTrue(modifiedPaths.contains(base.resolve(file)));
 	}
 
 	private void expectFilesCount(Integer added, Integer removed, Integer modified) {
@@ -278,31 +304,5 @@ public class TestBndMain {
 		if (modified != null) {
 			assertEquals(modified, Integer.valueOf(modifiedPaths.size()));
 		}
-	}
-
-	@Test
-	public void testClean() throws Exception {
-		String input = "clean";
-
-		test(input, gTD_WS);
-		expectNoError();
-
-		expectRemovedFiles(gTD_WS, "p2/generated/buildfiles");
-		expectRemovedFiles(gTD_WS, "p2/generated/p2.jar");
-		expectRemovedFiles(gTD_WS, "p3/bin/somepackage/SomeOldClass.class");
-
-		expectFilesCount(0, 3, 0);
-	}
-
-	private void expectRemovedFiles(Path base, String file) {
-		assertTrue(removedPaths.contains(base.resolve(file)));
-	}
-
-	private void expectAddedFiles(Path base, String file) {
-		assertTrue(addedPaths.contains(base.resolve(file)));
-	}
-
-	private void expectModifiedFiles(Path base, String file) {
-		assertTrue(modifiedPaths.contains(base.resolve(file)));
 	}
 }
