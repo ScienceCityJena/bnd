@@ -155,8 +155,9 @@ public class TestBndMain {
 		test(input, testNamePathWorkspace);
 		expectNoError();
 
-		expectRemovedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+
 		expectRemovedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
+		expectRemovedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(0, 2, 0);
 	}
@@ -168,8 +169,9 @@ public class TestBndMain {
 		test(input, testNamePathWorkspace);
 		expectNoError();
 
-		expectRemovedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+
 		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
+		expectRemovedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(0, 1, 0);
 	}
@@ -181,7 +183,8 @@ public class TestBndMain {
 		test(input, testNamePath);
 		expectNoError();
 
-		expectRemovedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+
+		expectRemovedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeOldClass.class");
 		expectRemovedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(0, 2, 0);
@@ -195,7 +198,8 @@ public class TestBndMain {
 		test(input, testNamePath);
 		expectNoError();
 
-		expectRemovedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+
+		expectRemovedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeOldClass.class");
 		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(0, 1, 0);
@@ -208,7 +212,8 @@ public class TestBndMain {
 		test(input, testNamePathWorkspace);
 		expectNoError();
 
-		expectRemovedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+
+		expectRemovedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeOldClass.class");
 		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(0, 1, 0);
@@ -223,7 +228,7 @@ public class TestBndMain {
 		expectAddedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeClass.class");
 		expectAddedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeClass.class");
 
-		expectUntouchedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+
 		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(2, 0, 0);
@@ -238,7 +243,7 @@ public class TestBndMain {
 
 		expectAddedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeClass.class");
 
-		expectUntouchedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+
 		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(1, 0, 0);
@@ -254,7 +259,7 @@ public class TestBndMain {
 		expectAddedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeClass.class");
 		expectAddedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeClass.class");
 
-		expectUntouchedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+
 		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(2, 0, 0);
@@ -270,7 +275,7 @@ public class TestBndMain {
 
 		expectAddedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeClass.class");
 
-		expectUntouchedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+
 		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(1, 0, 0);
@@ -285,7 +290,7 @@ public class TestBndMain {
 
 		expectAddedFiles(testNamePathWorkspace, "p2/bin/somepackage/SomeClass.class");
 
-		expectUntouchedFiles(testNamePathWorkspace, "p2/generated/p2.jar");
+
 		expectUntouchedFiles(testNamePathWorkspace, "p3/bin/somepackage/SomeOldClass.class");
 
 		expectFilesCount(1, 0, 0);
