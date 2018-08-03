@@ -1,21 +1,29 @@
-package aQute.bnd.main.rules;
+package aQute.bnd.main.testrules;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.junit.rules.TestRule;
 
 public interface WatchedFolder extends TestRule {
+	/**
+	 * Gets the root path of the folder.
+	 *
+	 * @return the root path of the folder
+	 */
+	Path getRootPath();
 
 	/**
 	 * Copy data from source to watched folder.
 	 *
 	 * @param srcDir the source directory
+	 * @return the watched folder
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	void copyDataFrom(Path srcDir) throws IOException;
+	WatchedFolder copyDataFrom(Path srcDir) throws IOException;
 
 	/**
 	 * Takes a snapshot of the actual content of the folder.
@@ -44,11 +52,15 @@ public interface WatchedFolder extends TestRule {
 	void print(PrintStream printStream, boolean relativize) throws IOException;
 
 	/**
-	 * Gets the root path of the folder.
+	 * Creates a statistic of FileStatus of the folder with respect to the last
+	 * snapshot.
 	 *
-	 * @return the root path of the folder
+	 * @param relativize the iff true print pathes relative to folder's root
+	 * @return The map containing the actual {@link FileStatus} of each file of
+	 *         the folder.
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	Path getRootPath();
+	Map<Path, FileStatus> createFileStatistic(boolean relativize) throws IOException;
 
 	/**
 	 * The Enum FileStatus.
