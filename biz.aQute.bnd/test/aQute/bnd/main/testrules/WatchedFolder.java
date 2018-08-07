@@ -1,5 +1,6 @@
 package aQute.bnd.main.testrules;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -41,6 +42,14 @@ public interface WatchedFolder extends TestRule {
 	 * @return the file status
 	 */
 	FileStatus checkFile(Path relPath);
+
+	/**
+	 * Gets the file.
+	 *
+	 * @param relPath the relative path with respect to folder's root
+	 * @return the file
+	 */
+	File getFile(String relPath);
 
 	/**
 	 * Prints the content of the folder.

@@ -28,4 +28,4 @@ Export-Package:  \
 
 -fixupmessages.private: private references
 
--baseline: *
+#-baseline: *

@@ -1,5 +1,6 @@
 package aQute.bnd.main.testrules;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -49,6 +50,12 @@ public class WatchedTemporaryFolder extends TemporaryFolder implements WatchedFo
 	}
 
 	@Override
+	public File getFile(String relPath) {
+		return getRootPath().resolve(relPath)
+			.toFile();
+	}
+
+	@Override
 	public void print(PrintStream printStream, boolean relativize) throws IOException {
 		Files.walk(getRootPath())
 			.forEach(p -> printStream.println(relativize ? getRootPath().relativize(p) : p));
@@ -56,9 +63,21 @@ public class WatchedTemporaryFolder extends TemporaryFolder implements WatchedFo
 
 	@Override
 	public Map<Path, FileStatus> createFileStatistic(boolean relativize) throws IOException {
-		return Files.walk(getRootPath())
+		// walk over all files (created, modified, unmodified)
+		Map<Path, FileStatus> result = Files.walk(getRootPath())
 			.collect(Collectors.toMap((Path p) -> (relativize ? getRootPath().relativize(p) : p),
 				p -> computeFileStatus(p)));
+
+		// add deleted files
+		Map<Path, FileStatus> deleted = snapshotData.keySet()
+			.stream()
+			.map(p -> getRootPath().relativize(p))
+			.filter(p -> !result.containsKey(p))
+			.collect(Collectors.toMap((Path p) -> p, p -> FileStatus.DELETED));
+
+		result.putAll(deleted);
+
+		return result;
 	}
 
 	private WatchedFolder.FileStatus computeFileStatus(final Path p) {
