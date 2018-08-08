@@ -71,8 +71,6 @@ public class IndexCommand extends Processor {
 		}
 
 		// using AntGlobs
-		bnd.out.println("IndexDirectory: " + outputDir);
-		bnd.out.println("Files-to-index: " + opts._arguments());
 		final List<File> files = new FileTree().getFiles(outputDir, opts._arguments());
 
 		if (opts.verbose()) {
