@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -106,14 +107,28 @@ public class TestBndMainBase {
 		assertNotNull("missing entry in jar: " + path, jar.getResource(path));
 	}
 
-	/* Print */
+	/* print etc. */
+	protected String getSystemOutContent() {
+		return capturedStdIO.getSystemOutContent();
+	}
+
+	protected String getSystemErrContent() {
+		return capturedStdIO.getSystemErrContent();
+	}
+
+	protected PrintStream getSystemOut() {
+		return capturedStdIO.getSystemOut();
+	}
+
+	protected PrintStream getSystemErr() {
+		return capturedStdIO.getSystemErr();
+	}
+
 	protected void print(final String str) {
-		capturedStdIO.getSystemOut()
-			.print(str);
+		getSystemOut().print(str);
 	}
 
 	protected void println(final String str) {
-		capturedStdIO.getSystemOut()
-			.println(str);
+		getSystemOut().println(str);
 	}
 }

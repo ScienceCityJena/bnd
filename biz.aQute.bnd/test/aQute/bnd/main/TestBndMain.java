@@ -210,5 +210,4 @@ public class TestBndMain extends TestBndMainBase {
 		expectFileStataus(FileStatus.CREATED, "p2/bin/somepackage/SomeClass.class");
 		expectFileStataus(FileStatus.UNMODIFIED_EXISTS, "p3/bin/somepackage/SomeOldClass.class");
 	}
-
 }
