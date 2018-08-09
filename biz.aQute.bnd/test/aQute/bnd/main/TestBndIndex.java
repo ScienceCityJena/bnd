@@ -43,6 +43,8 @@ public class TestBndIndex extends TestBndMainBase {
 			.count();
 
 		assertEquals(count, 2L);
+
+		print(getFileContent(IndexCommand.DEFAULT_INDEX_FILE) + "");
 	}
 
 	@Test
@@ -52,11 +54,20 @@ public class TestBndIndex extends TestBndMainBase {
 		final String repoRootDir = folder.getRootPath()
 			.toString();
 
+		print(repoRootDir);
+
 		executeBndCmd("index", "-d", repoRootDir, "-v", "**/*.jar");
 
 		expectNoError();
 
 		expectFileStataus(FileStatus.CREATED, IndexCommand.DEFAULT_INDEX_FILE);
+
+		final long count = getFileContent(IndexCommand.DEFAULT_INDEX_FILE).stream()
+			.filter(line -> line.contains("<resource>"))
+			// .peek(this::print)
+			.count();
+
+		assertEquals(count, 6L);
 	}
 
 	@Test
