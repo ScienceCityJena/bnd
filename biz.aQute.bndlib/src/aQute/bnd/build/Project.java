@@ -415,9 +415,9 @@ public class Project extends Processor {
 				dependenciesTest.addAll(dependenciesFull);
 				dependenciesTest.retainAll(testDeps);
 
-				for (Project project : dependenciesFull) {
-					allsourcepath.addAll(project.getSourcePath());
-				}
+				// for (Project project : dependenciesFull) {
+				// allsourcepath.addAll(project.getSourcePath());
+				// }
 
 				preparedPaths.set(true);
 			} finally {
